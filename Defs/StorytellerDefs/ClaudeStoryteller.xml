@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <StorytellerDef ParentName="BaseStoryteller">
+    <defName>ClaudeAI</defName>
+    <label>Claude AI</label>
+    <description>Claude watches your colony and adapts. Using AI, events are chosen based on your colony's actual situation—not just wealth curves. Expect the unexpected.
+Configure your API key in Mod Settings > Claude Storyteller.</description>
+    <listOrder>10</listOrder>
+    <portraitLarge>Storytellers/ClaudeLarge</portraitLarge>
+    <portraitTiny>Storytellers/ClaudeTiny</portraitTiny>
+    
+    <comps>
+      <li Class="ClaudeStoryteller.StorytellerCompProperties_Claude" />
+    </comps>
+  </StorytellerDef>
+</Defs>
