@@ -42,14 +42,153 @@ namespace ClaudeStoryteller
         private static readonly HashSet<string> ThreatEvents = new HashSet<string>
         {
             "RaidEnemy", "Infestation", "MechCluster", "ManhunterPack",
-            "Disease", "ToxicFallout", "PsychicDrone", "Defoliator",
+            "Disease_Plague", "Disease_Flu", "Disease_Malaria", "Disease_GutWorms",
+            "ToxicFallout", "PsychicDrone", "DefoliatorShipPartCrash",
             "ColdSnap", "HeatWave", "Flashstorm"
         };
 
         private static readonly HashSet<string> MajorThreatEvents = new HashSet<string>
         {
-            "RaidEnemy", "Infestation", "MechCluster", "Defoliator"
+            "RaidEnemy", "Infestation", "MechCluster", "DefoliatorShipPartCrash"
         };
+
+        // Fallback events when Claude's choice can't fire
+        private static readonly List<string> MinorFallbacks = new List<string>
+        {
+            "ShipChunkDrop", "ResourcePodCrash", "WandererJoin", "TraderCaravanArrival",
+            "VisitorGroup", "TravelerGroup", "OrbitalTraderArrival", "SelfTame"
+        };
+
+        private static readonly List<string> MajorFallbacks = new List<string>
+        {
+            "RaidEnemy", "TraderCaravanArrival", "ResourcePodCrash", "RefugeePodCrash",
+            "WandererJoin", "TravelerGroup"
+        };
+
+        private static readonly Dictionary<string, string> EventNameMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Disease mappings
+            {"Disease", "Disease_Plague"},
+            {"Plague", "Disease_Plague"},
+            {"Disease_Plague", "Disease_Plague"},
+            {"Flu", "Disease_Flu"},
+            {"Disease_Flu", "Disease_Flu"},
+            {"Malaria", "Disease_Malaria"},
+            {"Disease_Malaria", "Disease_Malaria"},
+            {"GutWorms", "Disease_GutWorms"},
+            {"Disease_GutWorms", "Disease_GutWorms"},
+            {"MuscleParasites", "Disease_MuscleParasites"},
+            {"Disease_MuscleParasites", "Disease_MuscleParasites"},
+            {"FibrousMechanites", "Disease_FibrousMechanites"},
+            {"Disease_FibrousMechanites", "Disease_FibrousMechanites"},
+            {"SensoryMechanites", "Disease_SensoryMechanites"},
+            {"Disease_SensoryMechanites", "Disease_SensoryMechanites"},
+            
+            // Raid mappings
+            {"Raid", "RaidEnemy"},
+            {"EnemyRaid", "RaidEnemy"},
+            {"RaidEnemy", "RaidEnemy"},
+            
+            // Weather/Environment
+            {"ToxicFallout", "ToxicFallout"},
+            {"VolcanicWinter", "VolcanicWinter"},
+            {"ColdSnap", "ColdSnap"},
+            {"HeatWave", "HeatWave"},
+            {"Flashstorm", "Flashstorm"},
+            {"Eclipse", "Eclipse"},
+            {"SolarFlare", "SolarFlare"},
+            {"Aurora", "Aurora"},
+            
+            // Infestations
+            {"Infestation", "Infestation"},
+            {"DeepDrillInfestation", "DeepDrillInfestation"},
+            
+            // Positive events
+            {"CargoDropPod", "ResourcePodCrash"},
+            {"ResourcePod", "ResourcePodCrash"},
+            {"ResourcePodCrash", "ResourcePodCrash"},
+            {"ShipChunkDrop", "ShipChunkDrop"},
+            {"WandererJoin", "WandererJoin"},
+            {"WandererJoins", "WandererJoin"},
+            {"Wanderer", "WandererJoin"},
+            {"TraderArrival", "TraderCaravanArrival"},
+            {"TraderCaravan", "TraderCaravanArrival"},
+            {"TraderCaravanArrival", "TraderCaravanArrival"},
+            {"Trader", "TraderCaravanArrival"},
+            {"VisitorGroup", "VisitorGroup"},
+            {"Visitors", "VisitorGroup"},
+            {"TravelerGroup", "TravelerGroup"},
+            {"Traveler", "TravelerGroup"},
+            {"OrbitalTraderArrival", "OrbitalTraderArrival"},
+            {"OrbitalTrader", "OrbitalTraderArrival"},
+            
+            // Animals
+            {"ManhunterPack", "ManhunterPack"},
+            {"Manhunter", "ManhunterPack"},
+            {"ManhunterAmbush", "ManhunterPack"},
+            {"AnimalInsanity", "AnimalInsanityMass"},
+            {"AnimalInsanityMass", "AnimalInsanityMass"},
+            {"AnimalInsanitySingle", "AnimalInsanitySingle"},
+            {"HerdMigration", "HerdMigration"},
+            {"Herd", "HerdMigration"},
+            {"FarmAnimalsWanderIn", "FarmAnimalsWanderIn"},
+            {"FarmAnimals", "FarmAnimalsWanderIn"},
+            {"ThrumboPasses", "ThrumboPasses"},
+            {"Thrumbo", "ThrumboPasses"},
+            {"WildManWandersIn", "WildManWandersIn"},
+            {"WildMan", "WildManWandersIn"},
+            {"SelfTame", "SelfTame"},
+            
+            // Mechs
+            {"MechCluster", "MechCluster"},
+            {"MechanoidCluster", "MechCluster"},
+            {"Mechanoid", "MechCluster"},
+            
+            // Ship parts
+            {"Defoliator", "DefoliatorShipPartCrash"},
+            {"DefoliatorShipPartCrash", "DefoliatorShipPartCrash"},
+            {"DefoliatorShip", "DefoliatorShipPartCrash"},
+            {"PsychicShip", "PsychicEmanatorShipPartCrash"},
+            {"PsychicEmanator", "PsychicEmanatorShipPartCrash"},
+            {"PsychicEmanatorShipPartCrash", "PsychicEmanatorShipPartCrash"},
+            
+            // Psychic
+            {"PsychicDrone", "PsychicDrone"},
+            {"PsychicSoothe", "PsychicSoothe"},
+            
+            // Misc threats
+            {"ShortCircuit", "ShortCircuit"},
+            {"CropBlight", "CropBlight"},
+            {"Blight", "CropBlight"},
+            {"Alphabeavers", "Alphabeavers"},
+            {"Beavers", "Alphabeavers"},
+            
+            // Refugees/Pods
+            {"RefugeePodCrash", "RefugeePodCrash"},
+            {"RefugeePod", "RefugeePodCrash"},
+            {"Refugee", "RefugeePodCrash"},
+            {"TransportPodCrash", "RefugeePodCrash"},
+            {"EscapeShuttleCrash", "RefugeePodCrash"},
+            
+            // Quests
+            {"Quest", "GiveQuest"},
+            {"QuestOffer", "GiveQuest"},
+            {"GiveQuest", "GiveQuest"},
+            
+            // Party/Social
+            {"Party", "Party"},
+            {"Wedding", "Wedding"},
+        };
+
+        private static string ResolveEventName(string type)
+        {
+            if (string.IsNullOrEmpty(type)) return null;
+            
+            if (EventNameMapping.TryGetValue(type, out string mapped))
+                return mapped;
+            
+            return type;
+        }
 
         private DifficultyInfo GetDifficulty()
         {
@@ -164,22 +303,10 @@ namespace ClaudeStoryteller
             var readyEvents = EventQueue.PopReady(currentTick);
             foreach (var queued in readyEvents)
             {
-                var incident = ConvertQueuedToIncident(queued, target);
+                var incident = ConvertQueuedToIncidentWithFallback(queued, target);
                 if (incident != null)
                 {
-                    ClaudeLogger.LogEventFired(
-                        queued.EventType,
-                        queued.Intensity,
-                        queued.Faction,
-                        queued.Subtype,
-                        incident.parms?.points ?? 0
-                    );
-                    ColonyStateCollector.RecordEvent(queued.EventType, "fired");
                     yield return incident;
-                }
-                else
-                {
-                    ClaudeLogger.LogEventSkipped($"Queued event {queued.EventType} failed to convert");
                 }
             }
 
@@ -341,22 +468,18 @@ namespace ClaudeStoryteller
                 yield break;
             }
 
-            var incident = ConvertResponseToIncident(response, target);
+            var incident = ConvertToIncidentWithFallback(
+                response.Event.Type,
+                response.Event.Intensity,
+                response.Event.Faction,
+                response.Event.Subtype,
+                target,
+                source
+            );
+            
             if (incident != null)
             {
-                ClaudeLogger.LogEventFired(
-                    response.Event.Type,
-                    response.Event.Intensity,
-                    response.Event.Faction,
-                    response.Event.Subtype,
-                    incident.parms?.points ?? 0
-                );
-                ColonyStateCollector.RecordEvent(response.Event.Type, "fired");
                 yield return incident;
-            }
-            else
-            {
-                ClaudeLogger.LogEventSkipped($"{source}: ConvertResponseToIncident returned null for {response.Event.Type}");
             }
         }
 
@@ -385,58 +508,83 @@ namespace ClaudeStoryteller
             }
         }
 
-        private FiringIncident ConvertResponseToIncident(ClaudeResponse response, IIncidentTarget target)
+        private FiringIncident ConvertQueuedToIncidentWithFallback(QueuedEvent queued, IIncidentTarget target)
         {
-            if (response?.Event == null) return null;
-
-            return ConvertToIncident(
-                response.Event.Type,
-                response.Event.Intensity,
-                response.Event.Faction,
-                response.Event.Subtype,
-                target
-            );
-        }
-
-        private FiringIncident ConvertQueuedToIncident(QueuedEvent queued, IIncidentTarget target)
-        {
-            return ConvertToIncident(
+            return ConvertToIncidentWithFallback(
                 queued.EventType,
                 queued.Intensity,
                 queued.Faction,
                 queued.Subtype,
-                target
+                target,
+                queued.SourceCycle
             );
         }
 
-        private FiringIncident ConvertToIncident(string type, float intensity, string faction, string subtype, IIncidentTarget target)
+        private FiringIncident ConvertToIncidentWithFallback(string type, float intensity, string faction, string subtype, IIncidentTarget target, string source)
+        {
+            // Try the requested event first
+            var incident = TryConvertToIncident(type, intensity, faction, subtype, target);
+            if (incident != null)
+            {
+                ClaudeLogger.LogEventFired(type, intensity, faction, subtype, incident.parms?.points ?? 0);
+                ColonyStateCollector.RecordEvent(type, "fired");
+                return incident;
+            }
+
+            // Pick fallback list based on source
+            List<string> fallbacks = (source == "major") ? MajorFallbacks : MinorFallbacks;
+            
+            ClaudeLogger.LogEntry("FALLBACK", $"Primary event {type} failed, trying fallbacks...");
+
+            // Shuffle fallbacks for variety
+            var shuffled = new List<string>(fallbacks);
+            var rand = new Random();
+            for (int i = shuffled.Count - 1; i > 0; i--)
+            {
+                int j = rand.Next(i + 1);
+                var temp = shuffled[i];
+                shuffled[i] = shuffled[j];
+                shuffled[j] = temp;
+            }
+
+            foreach (var fallbackType in shuffled)
+            {
+                incident = TryConvertToIncident(fallbackType, 1.0f, null, null, target);
+                if (incident != null)
+                {
+                    ClaudeLogger.LogEntry("FALLBACK_FIRED", $"Fallback event {fallbackType} fired instead of {type}");
+                    ColonyStateCollector.RecordEvent(fallbackType, "fallback");
+                    return incident;
+                }
+            }
+
+            ClaudeLogger.LogEventSkipped($"All fallbacks failed for {type}");
+            return null;
+        }
+
+        private FiringIncident TryConvertToIncident(string type, float intensity, string faction, string subtype, IIncidentTarget target)
         {
             var diff = GetDifficulty();
-
-            if (!diff.AllowThreats && ThreatEvents.Contains(type))
+            string resolvedType = ResolveEventName(type);
+            
+            if (!diff.AllowThreats && ThreatEvents.Contains(resolvedType))
             {
                 ClaudeLogger.LogEventSkipped($"Difficulty [{diff.Label}] blocks threat: {type}");
                 return null;
             }
 
-            if (!diff.AllowMajorThreats && MajorThreatEvents.Contains(type))
+            if (!diff.AllowMajorThreats && MajorThreatEvents.Contains(resolvedType))
             {
                 ClaudeLogger.LogEventSkipped($"Difficulty [{diff.Label}] blocks major threat: {type}");
                 return null;
             }
 
             float clampedIntensity = Math.Max(diff.MinIntensity, Math.Min(intensity, diff.MaxIntensity));
-            if (Math.Abs(clampedIntensity - intensity) > 0.01f)
-            {
-                ClaudeLogger.LogEntry("DIFFICULTY_CLAMP",
-                    $"{type}: intensity {intensity:F2} clamped to {clampedIntensity:F2} [{diff.Label}]"
-                );
-            }
 
-            IncidentDef incidentDef = DefDatabase<IncidentDef>.GetNamedSilentFail(type);
+            IncidentDef incidentDef = DefDatabase<IncidentDef>.GetNamedSilentFail(resolvedType);
             if (incidentDef == null)
             {
-                ClaudeLogger.LogEventSkipped($"Unknown incident def: {type}");
+                ClaudeLogger.LogEventSkipped($"Unknown incident def: {type} (resolved: {resolvedType})");
                 return null;
             }
 
@@ -450,11 +598,18 @@ namespace ClaudeStoryteller
                     parms.faction = factionObj;
             }
 
-            if (!string.IsNullOrEmpty(subtype) && type.Contains("Raid"))
+            if (!string.IsNullOrEmpty(subtype) && resolvedType.Contains("Raid"))
             {
                 var strategy = GetRaidStrategy(subtype);
                 if (strategy != null)
                     parms.raidStrategy = strategy;
+            }
+
+            // Check if the event can actually fire
+            if (!incidentDef.Worker.CanFireNow(parms))
+            {
+                ClaudeLogger.LogEventSkipped($"CanFireNow false: {type} (resolved: {resolvedType})");
+                return null;
             }
 
             return new FiringIncident(incidentDef, this, parms);

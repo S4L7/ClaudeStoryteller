@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj": {}
+    "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj": {}
   },
   "projects": {
-    "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj": {
+    "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
+        "projectUniqueName": "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
         "projectName": "ClaudeStoryteller",
-        "projectPath": "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
+        "projectPath": "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
         "packagesPath": "/home/nufu/.nuget/packages/",
-        "outputPath": "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/",
+        "outputPath": "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/nufu/.nuget/NuGet/NuGet.Config"

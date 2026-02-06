@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
+      "projectUniqueName": "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
       "projectName": "ClaudeStoryteller",
-      "projectPath": "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
+      "projectPath": "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/ClaudeStoryteller.csproj",
       "packagesPath": "/home/nufu/.nuget/packages/",
-      "outputPath": "/home/nufu/.steam/steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/",
+      "outputPath": "/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/nufu/.nuget/NuGet/NuGet.Config"

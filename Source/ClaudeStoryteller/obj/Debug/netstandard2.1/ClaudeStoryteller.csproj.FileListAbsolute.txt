@@ -1,9 +1,0 @@
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/bin/Debug/netstandard2.1/ClaudeStoryteller.dll
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/bin/Debug/netstandard2.1/ClaudeStoryteller.pdb
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/Debug/netstandard2.1/ClaudeStoryteller.csproj.AssemblyReference.cache
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/Debug/netstandard2.1/ClaudeStoryteller.GeneratedMSBuildEditorConfig.editorconfig
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/Debug/netstandard2.1/ClaudeStoryteller.AssemblyInfoInputs.cache
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/Debug/netstandard2.1/ClaudeStoryteller.AssemblyInfo.cs
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/Debug/netstandard2.1/ClaudeStoryteller.csproj.CoreCompileInputs.cache
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/Debug/netstandard2.1/ClaudeStoryteller.dll
-/home/nufu/.local/share/Steam/steamapps/common/RimWorld/Mods/ClaudeStoryteller/Source/ClaudeStoryteller/obj/Debug/netstandard2.1/ClaudeStoryteller.pdb
