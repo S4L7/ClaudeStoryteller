@@ -1,0 +1,16 @@
+# Build outputs
+*.dll
+*.pdb
+bin/
+obj/
+
+# User-specific
+*.user
+*.suo
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Don't commit the published file ID (unique to uploader's account)
+PublishedFileId.txt

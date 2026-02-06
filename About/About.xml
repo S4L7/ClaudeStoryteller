@@ -8,40 +8,57 @@
         <li>1.6</li>
     </supportedVersions>
     <packageId>nathandidier.claudestoryteller</packageId>
-    <description>An AI-powered storyteller that uses Claude to dynamically generate events based on your colony's actual situation.
+    <description>An AI-powered storyteller that actually pays attention to your colony.
 
-Unlike vanilla storytellers that follow preset curves, Claude analyzes your colony's wealth, defenses, vulnerabilities, recent history, and narrative state to craft contextual events and multi-event story arcs.
+WHAT MAKES IT DIFFERENT
+Vanilla storytellers follow preset curves. Claude reads your actual situation — wealth, defenses, mood, food, recent events — and makes decisions based on what's really happening. Wooden walls? Fire raid. No doctor? Plague. Thriving? Time to knock you down a peg.
 
-FEATURES
-- Three event cycles: minor, major, and narrative arcs
-- Claude adapts pacing based on how your colony is actually doing
-- Exploits your real weaknesses — wooden base? Fire. No turrets? Direct assault.
-- Narrative arcs create connected story sequences with evolving themes
-- Higher difficulties unlock more chaotic AI behavior
+HOW IT WORKS
+Claude runs on three cycles:
+- Minor Events: Weather, visitors, cargo pods, animals
+- Major Events: Raids, infestations, mech clusters, sieges
+- Narrative Arcs: Multi-event stories that unfold over time
 
-DIFFICULTY LEVELS
-- Peaceful/Community Builder: Gentle challenges, positive events
-- Adventure Story: Balanced threats and opportunities  
-- Strive to Survive: Claude actively hunts weaknesses
-- Blood and Dust/Losing is Fun: Unhinged chaos mode
+Each cycle runs independently on randomized timers you control.
+
+DIFFICULTY MATTERS
+- Peaceful/Builder: Claude plays nice, focuses on opportunities
+- Adventure Story: Balanced — challenges without brutality
+- Strive to Survive: Claude actively hunts your weaknesses
+- Blood and Dust / Losing is Fun: Unhinged mode — expect the unexpected
 
 SETUP
-1. Get API key from console.anthropic.com
-2. Mod Settings > Claude Storyteller > Paste key > Test Connection
-3. New game > Select "Claude AI" storyteller
+1. Get an API key from console.anthropic.com (free to create, pay per use)
+2. In RimWorld: Mod Settings > Claude Storyteller
+3. Click "Change API Key" and paste your key
+4. Click "Test API Connection" — should show green checkmark
+5. Start new colony, select "Claude AI" as storyteller
+
+TUNING THE SLIDERS
+In Mod Settings you can adjust how often each event type fires:
+- Minor Events: Default 36-72 game hours (1.5-3 days)
+- Major Events: Default 3-7 game days
+- Narrative Arcs: Default 4-8 game days
+
+Lower = more frequent. The range adds randomness — Claude picks within your window.
+
+API COSTS
+Claude API charges per use. Typical gameplay costs $0.01-0.05 per hour depending on settings. A full 50-hour playthrough might cost $1-2 total.
 
 SECURITY
-- API key stored locally, never shared except with Anthropic
-- Key obfuscated in memory and masked in UI
-- Only colony state is transmitted for event decisions
+- Your API key stays on your machine
+- Key is masked in the settings UI
+- Only colony data is sent to Claude (no personal info)
+- Nothing is stored or logged by the mod except locally
 
 REQUIREMENTS
-- Harmony (load before this mod)
-- Your own Anthropic API key (~$0.01-0.05/hour gameplay cost)
-- Internet connection
+- Harmony (must load before this mod)
+- Internet connection during play
+- Your own Anthropic API key
 
-Created by Nathan Didier
-https://nathandidier.com</description>
+LINKS
+Website: https://nathandidier.com
+Source: https://github.com/S4L7/ClaudeStoryteller</description>
     <modDependencies>
         <li>
             <packageId>brrainz.harmony</packageId>
