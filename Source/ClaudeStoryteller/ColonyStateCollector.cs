@@ -18,6 +18,31 @@ namespace ClaudeStoryteller
         private static string lastArcOutcome = null;
         private static int lastArcTick = -999999;
 
+        // Event categories for Claude to understand what's available
+        private static readonly HashSet<string> WeatherEvents = new HashSet<string>
+        {
+            "ColdSnap", "HeatWave", "ToxicFallout", "VolcanicWinter", "Flashstorm", "Eclipse", "SolarFlare", "Aurora"
+        };
+
+        private static readonly HashSet<string> ThreatEvents = new HashSet<string>
+        {
+            "RaidEnemy", "Infestation", "MechCluster", "ManhunterPack", "DefoliatorShipPartCrash", 
+            "PsychicEmanatorShipPartCrash", "PsychicDrone"
+        };
+
+        private static readonly HashSet<string> PositiveEvents = new HashSet<string>
+        {
+            "TraderCaravanArrival", "OrbitalTraderArrival", "WandererJoin", "ResourcePodCrash", 
+            "RefugeePodCrash", "TravelerGroup", "VisitorGroup", "SelfTame", "FarmAnimalsWanderIn",
+            "ThrumboPasses", "WildManWandersIn", "ShipChunkDrop", "GiveQuest"
+        };
+
+        private static readonly HashSet<string> DiseaseEvents = new HashSet<string>
+        {
+            "Disease_Plague", "Disease_Flu", "Disease_Malaria", "Disease_GutWorms",
+            "Disease_FibrousMechanites", "Disease_SensoryMechanites", "Disease_MuscleParasites"
+        };
+
         public static void RecordEvent(string type, string outcome)
         {
             eventHistory.Insert(0, new PastEvent
@@ -30,7 +55,7 @@ namespace ClaudeStoryteller
             if (eventHistory.Count > 15)
                 eventHistory.RemoveAt(eventHistory.Count - 1);
 
-            if (IsThreatEvent(type))
+            if (ThreatEvents.Contains(type))
                 lastThreatTick = Find.TickManager.TicksGame;
         }
 
@@ -51,10 +76,82 @@ namespace ClaudeStoryteller
             lastArcTick = Find.TickManager.TicksGame;
         }
 
-        private static bool IsThreatEvent(string type)
+        public static List<string> GetAvailableEvents(Map map)
         {
-            return type.Contains("Raid") || type.Contains("Infestation") ||
-                   type.Contains("Mech") || type.Contains("Manhunter");
+            var available = new List<string>();
+            
+            // Check each known event type
+            var eventsToCheck = new List<string>();
+            eventsToCheck.AddRange(WeatherEvents);
+            eventsToCheck.AddRange(ThreatEvents);
+            eventsToCheck.AddRange(PositiveEvents);
+            eventsToCheck.AddRange(DiseaseEvents);
+            eventsToCheck.Add("HerdMigration");
+            eventsToCheck.Add("AmbrosiaSprout");
+            eventsToCheck.Add("CropBlight");
+            eventsToCheck.Add("ShortCircuit");
+            eventsToCheck.Add("Alphabeavers");
+            eventsToCheck.Add("AnimalInsanityMass");
+
+            foreach (var eventName in eventsToCheck)
+            {
+                var def = DefDatabase<IncidentDef>.GetNamedSilentFail(eventName);
+                if (def == null) continue;
+
+                try
+                {
+                    var parms = StorytellerUtility.DefaultParmsNow(def.category, map);
+                    if (def.Worker.CanFireNow(parms))
+                    {
+                        available.Add(eventName);
+                    }
+                }
+                catch
+                {
+                    // Skip events that error on CanFireNow check
+                }
+            }
+
+            return available;
+        }
+
+        public static Dictionary<string, List<string>> GetAvailableEventsByCategory(Map map)
+        {
+            var available = GetAvailableEvents(map);
+            var categorized = new Dictionary<string, List<string>>
+            {
+                { "weather", new List<string>() },
+                { "threats", new List<string>() },
+                { "positive", new List<string>() },
+                { "disease", new List<string>() },
+                { "other", new List<string>() }
+            };
+
+            foreach (var evt in available)
+            {
+                if (WeatherEvents.Contains(evt))
+                    categorized["weather"].Add(evt);
+                else if (ThreatEvents.Contains(evt))
+                    categorized["threats"].Add(evt);
+                else if (PositiveEvents.Contains(evt))
+                    categorized["positive"].Add(evt);
+                else if (DiseaseEvents.Contains(evt))
+                    categorized["disease"].Add(evt);
+                else
+                    categorized["other"].Add(evt);
+            }
+
+            return categorized;
+        }
+
+        public static bool IsWeatherEvent(string eventType)
+        {
+            return WeatherEvents.Contains(eventType);
+        }
+
+        public static bool IsThreatEvent(string eventType)
+        {
+            return ThreatEvents.Contains(eventType);
         }
 
         public static ColonyState CollectState(Map map, string callType)
@@ -64,6 +161,9 @@ namespace ClaudeStoryteller
             var colonists = map.mapPawns.FreeColonists.ToList();
             var wealth = map.wealthWatcher.WealthTotal;
             var days = GenDate.DaysPassed;
+
+            // Get available events
+            var availableEvents = GetAvailableEventsByCategory(map);
 
             var state = new ColonyState
             {
@@ -76,6 +176,7 @@ namespace ClaudeStoryteller
                 DoNotRepeat = GetRecentEventTypes(),
                 CurrentQueue = CollectQueueContext(),
                 Difficulty = CollectDifficulty(),
+                AvailableEvents = availableEvents,
                 RandomSeed = Rand.Int
             };
 
@@ -98,9 +199,6 @@ namespace ClaudeStoryteller
             var diff = Find.Storyteller.difficulty;
             float threatScale = diff.threatScale;
 
-            // Map RimWorld's difficulty index to labels and clamps
-            // diff.difficulty: 0=Peaceful, 1=Community Builder, 2=Adventure Story,
-            //                  3=Strive to Survive, 4=Blood and Dust, 5=Losing is Fun
             float diffLevel = diff.threatScale;
             string label;
             float maxIntensity;
@@ -158,7 +256,6 @@ namespace ClaudeStoryteller
             }
             else
             {
-                // Custom difficulty — derive from threat scale
                 label = "Custom";
                 maxIntensity = Math.Max(0.5f, threatScale * 1.5f);
                 minIntensity = Math.Max(0.2f, threatScale * 0.3f);

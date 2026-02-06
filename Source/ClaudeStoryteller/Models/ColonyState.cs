@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-
 namespace ClaudeStoryteller.Models
 {
     public class ColonyState
@@ -16,9 +15,9 @@ namespace ClaudeStoryteller.Models
         public QueueContext CurrentQueue { get; set; }
         public NarrativeContext LastArc { get; set; }
         public DifficultyInfo Difficulty { get; set; }
+        public Dictionary<string, List<string>> AvailableEvents { get; set; }
         public int RandomSeed { get; set; }
     }
-
     public class ColonyInfo
     {
         public string Name { get; set; }
@@ -31,7 +30,6 @@ namespace ClaudeStoryteller.Models
         public float AdaptationScore { get; set; }
         public float ThreatScale { get; set; }
     }
-
     public class CombatReadiness
     {
         public float Score { get; set; }
@@ -40,7 +38,6 @@ namespace ClaudeStoryteller.Models
         public List<string> Defenses { get; set; }
         public List<string> Vulnerabilities { get; set; }
     }
-
     public class Resources
     {
         public int FoodDays { get; set; }
@@ -48,7 +45,6 @@ namespace ClaudeStoryteller.Models
         public string Components { get; set; }
         public int Silver { get; set; }
     }
-
     public class RecentHistory
     {
         public int DaysSinceThreat { get; set; }
@@ -56,33 +52,29 @@ namespace ClaudeStoryteller.Models
         public int DaysSinceColonistDowned { get; set; }
         public List<PastEvent> LastEvents { get; set; }
     }
-
     public class PastEvent
     {
         public string Type { get; set; }
         public int DaysAgo { get; set; }
         public string Outcome { get; set; }
     }
-
     public class QueueContext
     {
         public int PendingCount { get; set; }
         public List<string> QueuedTypes { get; set; }
         public string QueueSummary { get; set; }
     }
-
     public class NarrativeContext
     {
         public string ArcName { get; set; }
         public string Outcome { get; set; }
         public int DaysAgo { get; set; }
     }
-
     public class DifficultyInfo
     {
-        public string Label { get; set; }          // "Peaceful", "Adventure story", etc.
+        public string Label { get; set; }
         public float ThreatScale { get; set; }
-        public float MaxIntensity { get; set; }     // Hard cap enforced C#-side
+        public float MaxIntensity { get; set; }
         public float MinIntensity { get; set; }
         public bool AllowThreats { get; set; }
         public bool AllowMajorThreats { get; set; }
