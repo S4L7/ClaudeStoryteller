@@ -13,9 +13,15 @@ namespace ClaudeStoryteller.Models
         public List<string> AvailableFactions { get; set; }
         public List<string> DoNotRepeat { get; set; }
         public QueueContext CurrentQueue { get; set; }
-        public NarrativeContext LastArc { get; set; }
+        public ArcHistorySummary ArcHistory { get; set; }
         public DifficultyInfo Difficulty { get; set; }
         public Dictionary<string, List<string>> AvailableEvents { get; set; }
+        public EventDensity Density { get; set; }
+        public string LastPosture { get; set; }
+        public List<string> HighlightedEvents { get; set; }
+        public List<string> ExcludedThisCall { get; set; }
+        public string StorytellingMood { get; set; }
+        public Dictionary<string, int> CategoryUsageLast5 { get; set; }
         public int RandomSeed { get; set; }
     }
     public class ColonyInfo
@@ -64,11 +70,22 @@ namespace ClaudeStoryteller.Models
         public List<string> QueuedTypes { get; set; }
         public string QueueSummary { get; set; }
     }
-    public class NarrativeContext
+    public class ArcHistorySummary
     {
-        public string ArcName { get; set; }
+        public int TotalArcs { get; set; }
+        public List<ArcSummaryEntry> Last3Arcs { get; set; }
+        public List<string> OverusedEvents { get; set; }
+        public List<string> OverusedOpeners { get; set; }
+        public List<string> UnderusedEvents { get; set; }
+        public string DominantPattern { get; set; }
+        public string Instruction { get; set; }
+    }
+    public class ArcSummaryEntry
+    {
+        public string Name { get; set; }
+        public List<string> Events { get; set; }
         public string Outcome { get; set; }
-        public int DaysAgo { get; set; }
+        public int Day { get; set; }
     }
     public class DifficultyInfo
     {

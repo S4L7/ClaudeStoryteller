@@ -9,30 +9,21 @@ namespace ClaudeStoryteller
 {
     public static class ColonyStateCollector
     {
-        private static List<PastEvent> eventHistory = new List<PastEvent>();
-        private static int lastDeathTick = -999999;
-        private static int lastDownedTick = -999999;
-        private static int lastThreatTick = -999999;
-
-        private static string lastArcName = null;
-        private static string lastArcOutcome = null;
-        private static int lastArcTick = -999999;
-
         // Event categories for Claude to understand what's available
         private static readonly HashSet<string> WeatherEvents = new HashSet<string>
         {
             "ColdSnap", "HeatWave", "ToxicFallout", "VolcanicWinter", "Flashstorm", "Eclipse", "SolarFlare", "Aurora"
         };
 
-        private static readonly HashSet<string> ThreatEvents = new HashSet<string>
+        private static readonly HashSet<string> ThreatEventSet = new HashSet<string>
         {
-            "RaidEnemy", "Infestation", "MechCluster", "ManhunterPack", "DefoliatorShipPartCrash", 
+            "RaidEnemy", "Infestation", "MechCluster", "ManhunterPack", "DefoliatorShipPartCrash",
             "PsychicEmanatorShipPartCrash", "PsychicDrone"
         };
 
         private static readonly HashSet<string> PositiveEvents = new HashSet<string>
         {
-            "TraderCaravanArrival", "OrbitalTraderArrival", "WandererJoin", "ResourcePodCrash", 
+            "TraderCaravanArrival", "OrbitalTraderArrival", "WandererJoin", "ResourcePodCrash",
             "RefugeePodCrash", "TravelerGroup", "VisitorGroup", "SelfTame", "FarmAnimalsWanderIn",
             "ThrumboPasses", "WildManWandersIn", "ShipChunkDrop", "GiveQuest"
         };
@@ -43,55 +34,100 @@ namespace ClaudeStoryteller
             "Disease_FibrousMechanites", "Disease_SensoryMechanites", "Disease_MuscleParasites"
         };
 
+        // All known events for underused detection
+        private static readonly List<string> AllKnownEvents = new List<string>();
+
+        static ColonyStateCollector()
+        {
+            AllKnownEvents.AddRange(WeatherEvents);
+            AllKnownEvents.AddRange(ThreatEventSet);
+            AllKnownEvents.AddRange(PositiveEvents);
+            AllKnownEvents.AddRange(DiseaseEvents);
+            AllKnownEvents.Add("HerdMigration");
+            AllKnownEvents.Add("AmbrosiaSprout");
+            AllKnownEvents.Add("CropBlight");
+            AllKnownEvents.Add("ShortCircuit");
+            AllKnownEvents.Add("Alphabeavers");
+            AllKnownEvents.Add("AnimalInsanityMass");
+        }
+
+        // ========== Delegate to GameComponent ==========
+
         public static void RecordEvent(string type, string outcome)
         {
-            eventHistory.Insert(0, new PastEvent
-            {
-                Type = type,
-                DaysAgo = 0,
-                Outcome = outcome
-            });
+            var comp = StorytellerGameComponent.Get();
+            comp?.RecordEvent(type, outcome);
 
-            if (eventHistory.Count > 15)
-                eventHistory.RemoveAt(eventHistory.Count - 1);
-
-            if (ThreatEvents.Contains(type))
-                lastThreatTick = Find.TickManager.TicksGame;
+            // Track disease separately for hard cooldown
+            if (DiseaseEvents.Contains(type))
+                comp?.RecordDiseaseFired();
         }
 
         public static void RecordColonistDeath()
         {
-            lastDeathTick = Find.TickManager.TicksGame;
+            var comp = StorytellerGameComponent.Get();
+            comp?.RecordColonistDeath();
         }
 
         public static void RecordColonistDowned()
         {
-            lastDownedTick = Find.TickManager.TicksGame;
+            var comp = StorytellerGameComponent.Get();
+            comp?.RecordColonistDowned();
         }
 
-        public static void RecordArcComplete(string arcName, string outcome)
+        public static bool IsWeatherEvent(string eventType)
         {
-            lastArcName = arcName;
-            lastArcOutcome = outcome;
-            lastArcTick = Find.TickManager.TicksGame;
+            return WeatherEvents.Contains(eventType);
         }
+
+        public static bool IsThreatEvent(string eventType)
+        {
+            return ThreatEventSet.Contains(eventType);
+        }
+
+        public static bool IsDiseaseEvent(string eventType)
+        {
+            return DiseaseEvents.Contains(eventType);
+        }
+
+        /// <summary>
+        /// Returns true if a disease event is allowed (cooldown has elapsed).
+        /// Hard minimum of 25 days between any two disease events.
+        /// </summary>
+        public static bool CanFireDisease()
+        {
+            var comp = StorytellerGameComponent.Get();
+            if (comp == null) return true;
+
+            int daysSinceDisease = comp.DaysSinceLastDisease;
+            return daysSinceDisease >= 25;
+        }
+
+        // ========== Phase/State (public for GameComponent access) ==========
+
+        public static string GetCurrentPhase()
+        {
+            if (Find.CurrentMap == null) return "early";
+            int days = GenDate.DaysPassed;
+            float wealth = Find.CurrentMap.wealthWatcher.WealthTotal;
+            int colonists = Find.CurrentMap.mapPawns.FreeColonists.Count();
+            return DeterminePhase(days, wealth, colonists);
+        }
+
+        public static string GetCurrentNarrativeState()
+        {
+            if (Find.CurrentMap == null) return "stable";
+            int colonists = Find.CurrentMap.mapPawns.FreeColonists.Count();
+            return DetermineNarrativeState(GenDate.DaysPassed, colonists);
+        }
+
+        // ========== Available Events ==========
 
         public static List<string> GetAvailableEvents(Map map)
         {
             var available = new List<string>();
-            
-            // Check each known event type
-            var eventsToCheck = new List<string>();
-            eventsToCheck.AddRange(WeatherEvents);
-            eventsToCheck.AddRange(ThreatEvents);
-            eventsToCheck.AddRange(PositiveEvents);
-            eventsToCheck.AddRange(DiseaseEvents);
-            eventsToCheck.Add("HerdMigration");
-            eventsToCheck.Add("AmbrosiaSprout");
-            eventsToCheck.Add("CropBlight");
-            eventsToCheck.Add("ShortCircuit");
-            eventsToCheck.Add("Alphabeavers");
-            eventsToCheck.Add("AnimalInsanityMass");
+
+            var eventsToCheck = new List<string>(AllKnownEvents);
 
             foreach (var eventName in eventsToCheck)
             {
@@ -131,7 +167,7 @@ namespace ClaudeStoryteller
             {
                 if (WeatherEvents.Contains(evt))
                     categorized["weather"].Add(evt);
-                else if (ThreatEvents.Contains(evt))
+                else if (ThreatEventSet.Contains(evt))
                     categorized["threats"].Add(evt);
                 else if (PositiveEvents.Contains(evt))
                     categorized["positive"].Add(evt);
@@ -141,28 +177,290 @@ namespace ClaudeStoryteller
                     categorized["other"].Add(evt);
             }
 
+            // Remove diseases entirely if cooldown hasn't elapsed
+            if (!CanFireDisease())
+            {
+                categorized["disease"].Clear();
+            }
+
+            // Shuffle each category to prevent LLM position bias
+            var rng = new Random(GenTicks.TicksGame);
+            foreach (var key in categorized.Keys.ToList())
+            {
+                var list = categorized[key];
+                for (int i = list.Count - 1; i > 0; i--)
+                {
+                    int j = rng.Next(i + 1);
+                    var temp = list[i];
+                    list[i] = list[j];
+                    list[j] = temp;
+                }
+            }
+
             return categorized;
         }
 
-        public static bool IsWeatherEvent(string eventType)
+        // ========== Variance: Highlighted Events ==========
+
+        /// <summary>
+        /// Picks 3-5 random events from the available pool and suggests them to Claude.
+        /// Different highlights each call breaks the LLM's tendency to pick the same "safe" events.
+        /// </summary>
+        public static List<string> GenerateHighlightedEvents(Dictionary<string, List<string>> availableByCategory)
         {
-            return WeatherEvents.Contains(eventType);
+            var allAvailable = new List<string>();
+            foreach (var kvp in availableByCategory)
+                allAvailable.AddRange(kvp.Value);
+
+            if (allAvailable.Count == 0) return new List<string>();
+
+            var rng = new Random(GenTicks.TicksGame + 7919); // different seed from shuffle
+            int count = Math.Min(rng.Next(3, 6), allAvailable.Count);
+
+            var highlighted = new List<string>();
+            var pool = new List<string>(allAvailable);
+
+            for (int i = 0; i < count && pool.Count > 0; i++)
+            {
+                int idx = rng.Next(pool.Count);
+                highlighted.Add(pool[idx]);
+                pool.RemoveAt(idx);
+            }
+
+            return highlighted;
         }
 
-        public static bool IsThreatEvent(string eventType)
+        // ========== Variance: Random Exclusion List ==========
+
+        /// <summary>
+        /// Randomly removes 2-3 events from the available pool each call.
+        /// Forces Claude to pick from a different subset every time.
+        /// Returns the excluded event names so Claude knows they're unavailable.
+        /// Also removes them from the availableByCategory dict in place.
+        /// </summary>
+        public static List<string> GenerateExclusionList(Dictionary<string, List<string>> availableByCategory)
         {
-            return ThreatEvents.Contains(eventType);
+            var allAvailable = new List<string>();
+            foreach (var kvp in availableByCategory)
+                allAvailable.AddRange(kvp.Value);
+
+            if (allAvailable.Count <= 5) return new List<string>(); // don't exclude if pool is tiny
+
+            var rng = new Random(GenTicks.TicksGame + 4217);
+            int count = rng.Next(2, 4); // 2-3 exclusions
+            count = Math.Min(count, allAvailable.Count / 3); // never exclude more than 1/3 of pool
+
+            var excluded = new List<string>();
+            var pool = new List<string>(allAvailable);
+
+            for (int i = 0; i < count && pool.Count > 0; i++)
+            {
+                int idx = rng.Next(pool.Count);
+                string evt = pool[idx];
+                excluded.Add(evt);
+                pool.RemoveAt(idx);
+
+                // Remove from the actual category dict
+                foreach (var kvp in availableByCategory)
+                {
+                    kvp.Value.Remove(evt);
+                }
+            }
+
+            return excluded;
         }
+
+        // ========== Variance: Storytelling Mood ==========
+
+        private static readonly string[] MoodThemes = new string[]
+        {
+            "isolation and the wild frontier",
+            "calm before the storm",
+            "nature's indifference to human ambition",
+            "the fragility of civilization",
+            "unexpected visitors and strange omens",
+            "scarcity and resourcefulness",
+            "hubris and overconfidence punished",
+            "the bonds forged in hardship",
+            "creeping dread from the horizon",
+            "a season of strange weather",
+            "the land itself turns hostile",
+            "false security shattered",
+            "whispers of distant threats",
+            "abundance attracting predators",
+            "mechanical menace in the deep",
+            "pestilence carried on the wind",
+            "the kindness of strangers",
+            "fire and ruin",
+            "a test of the colony's resolve",
+            "the rhythm of survival breaking down",
+            "paranoia after a long peace",
+            "the wilderness reclaiming what was built",
+            "desperate measures in desperate times",
+            "an eerie quiet that begs to be broken"
+        };
+
+        /// <summary>
+        /// Returns a random storytelling mood phrase to shift Claude's creative framing each call.
+        /// </summary>
+        public static string GenerateStorytellingMood()
+        {
+            var rng = new Random(GenTicks.TicksGame + 6271);
+            return MoodThemes[rng.Next(MoodThemes.Length)];
+        }
+
+        // ========== Variance: Category Usage Tracking ==========
+
+        /// <summary>
+        /// Counts how many of the last N events came from each category.
+        /// Tells Claude what it's been over/under-using.
+        /// </summary>
+        public static Dictionary<string, int> CollectCategoryUsage(StorytellerGameComponent comp, int count)
+        {
+            var usage = new Dictionary<string, int>
+            {
+                { "weather", 0 },
+                { "threats", 0 },
+                { "positive", 0 },
+                { "disease", 0 },
+                { "other", 0 }
+            };
+
+            if (comp == null) return usage;
+
+            var recent = comp.GetRecentEventTypes(count);
+            foreach (var evt in recent)
+            {
+                if (WeatherEvents.Contains(evt))
+                    usage["weather"]++;
+                else if (ThreatEventSet.Contains(evt))
+                    usage["threats"]++;
+                else if (PositiveEvents.Contains(evt))
+                    usage["positive"]++;
+                else if (DiseaseEvents.Contains(evt))
+                    usage["disease"]++;
+                else
+                    usage["other"]++;
+            }
+
+            return usage;
+        }
+
+        // ========== Vanilla Reference (static, never changes) ==========
+
+        private static VanillaReference _vanillaRef = null;
+
+        public static VanillaReference GetVanillaReference()
+        {
+            if (_vanillaRef != null) return _vanillaRef;
+
+            _vanillaRef = new VanillaReference
+            {
+                Cassandra = new VanillaStoryteller
+                {
+                    Style = "structured tension curve with on/off cycles",
+                    MiscMtbDays = 3.0f,
+                    ThreatCycleDays = 10.6f,
+                    ThreatsPerCycle = "1-2",
+                    RestPeriodDays = 6.0f,
+                    MinThreatSpacingDays = 1.9f,
+                    DiseaseApproxMtbDays = 18.0f
+                },
+                Phoebe = new VanillaStoryteller
+                {
+                    Style = "long peace periods with hard singular hits",
+                    MiscMtbDays = 3.0f,
+                    ThreatCycleDays = 16.0f,
+                    ThreatsPerCycle = "1",
+                    RestPeriodDays = 8.0f,
+                    MinThreatSpacingDays = 12.5f,
+                    DiseaseApproxMtbDays = 22.0f
+                },
+                Randy = new VanillaStoryteller
+                {
+                    Style = "pure weighted chaos, no schedule, no guaranteed rest",
+                    MiscMtbDays = 1.13f,
+                    ThreatCycleDays = 11.0f,
+                    ThreatsPerCycle = "random",
+                    RestPeriodDays = 0f,
+                    MinThreatSpacingDays = 0f,
+                    DiseaseApproxMtbDays = 15.0f
+                }
+            };
+
+            return _vanillaRef;
+        }
+
+        // ========== Event Density ==========
+
+        public static EventDensity CollectDensity(StorytellerGameComponent comp)
+        {
+            if (comp == null)
+            {
+                return new EventDensity
+                {
+                    EventsLast7Days = 0,
+                    EventsLast15Days = 0,
+                    ThreatsLast7Days = 0,
+                    ThreatsLast15Days = 0,
+                    DiseasesLast30Days = 0,
+                    DaysSinceLastDisease = 999,
+                    DaysSinceArcCompleted = 999,
+                    ActiveArc = null,
+                    ActiveArcEventsRemaining = 0
+                };
+            }
+
+            var recentAll = comp.GetRecentEvents(30);
+            int currentTick = Find.TickManager.TicksGame;
+
+            int events7 = 0, events15 = 0;
+            int threats7 = 0, threats15 = 0;
+            int diseases30 = 0;
+
+            foreach (var evt in recentAll)
+            {
+                if (evt.DaysAgo <= 7)
+                {
+                    events7++;
+                    if (ThreatEventSet.Contains(evt.Type)) threats7++;
+                }
+                if (evt.DaysAgo <= 15)
+                {
+                    events15++;
+                    if (ThreatEventSet.Contains(evt.Type)) threats15++;
+                }
+                if (evt.DaysAgo <= 30 && DiseaseEvents.Contains(evt.Type))
+                {
+                    diseases30++;
+                }
+            }
+
+            return new EventDensity
+            {
+                EventsLast7Days = events7,
+                EventsLast15Days = events15,
+                ThreatsLast7Days = threats7,
+                ThreatsLast15Days = threats15,
+                DiseasesLast30Days = diseases30,
+                DaysSinceLastDisease = comp.DaysSinceLastDisease,
+                DaysSinceArcCompleted = comp.DaysSinceArcCompleted,
+                ActiveArc = comp.ActiveArcName,
+                ActiveArcEventsRemaining = comp.ActiveArcEventsRemaining
+            };
+        }
+
+        // ========== Main State Collection ==========
 
         public static ColonyState CollectState(Map map, string callType)
         {
             if (map == null) return null;
 
+            var comp = StorytellerGameComponent.Get();
             var colonists = map.mapPawns.FreeColonists.ToList();
             var wealth = map.wealthWatcher.WealthTotal;
             var days = GenDate.DaysPassed;
 
-            // Get available events
             var availableEvents = GetAvailableEventsByCategory(map);
 
             var state = new ColonyState
@@ -170,26 +468,28 @@ namespace ClaudeStoryteller
                 RequestId = Guid.NewGuid().ToString("N").Substring(0, 8),
                 CallType = callType,
                 Colony = CollectColonyInfo(map, colonists, wealth, days),
-                RecentHistory = CollectRecentHistory(days),
+                CombatReadiness = CollectCombatReadiness(map, colonists),
+                Resources = CollectResources(map, colonists),
+                RecentHistory = CollectRecentHistory(comp),
                 Cooldowns = CollectCooldowns(),
                 AvailableFactions = CollectFactions(),
-                DoNotRepeat = GetRecentEventTypes(),
+                DoNotRepeat = comp?.GetRecentEventTypes(3) ?? new List<string>(),
                 CurrentQueue = CollectQueueContext(),
                 Difficulty = CollectDifficulty(),
                 AvailableEvents = availableEvents,
+                Density = CollectDensity(comp),
+                LastPosture = comp?.LastPosture ?? "none — first call",
+                HighlightedEvents = GenerateHighlightedEvents(availableEvents),
+                ExcludedThisCall = GenerateExclusionList(availableEvents),
+                StorytellingMood = GenerateStorytellingMood(),
+                CategoryUsageLast5 = CollectCategoryUsage(comp, 5),
                 RandomSeed = Rand.Int
             };
 
-            if (callType != "minor")
-            {
-                state.CombatReadiness = CollectCombatReadiness(map, colonists);
-                state.Resources = CollectResources(map, colonists);
-            }
-
-            if (callType == "narrative")
-            {
-                state.LastArc = CollectNarrativeContext();
-            }
+            // Always include arc history for unified calls
+            var allAvailable = GetAvailableEvents(map);
+            var arcLog = comp?.GetArcLog() ?? new List<ArcLogEntry>();
+            state.ArcHistory = ArcSummarizer.Summarize(arcLog, allAvailable);
 
             return state;
         }
@@ -284,19 +584,6 @@ namespace ClaudeStoryteller
             };
         }
 
-        private static NarrativeContext CollectNarrativeContext()
-        {
-            if (lastArcName == null) return null;
-
-            int daysSinceArc = (Find.TickManager.TicksGame - lastArcTick) / GenDate.TicksPerDay;
-            return new NarrativeContext
-            {
-                ArcName = lastArcName,
-                Outcome = lastArcOutcome ?? "unknown",
-                DaysAgo = daysSinceArc
-            };
-        }
-
         private static ColonyInfo CollectColonyInfo(Map map, List<Pawn> colonists, float wealth, int days)
         {
             var phase = DeterminePhase(days, wealth, colonists.Count);
@@ -330,6 +617,9 @@ namespace ClaudeStoryteller
 
         private static string DetermineNarrativeState(int days, int colonists)
         {
+            var comp = StorytellerGameComponent.Get();
+            int lastDeathTick = comp?.LastDeathTick ?? -999999;
+
             int ticksSinceDeath = Find.TickManager.TicksGame - lastDeathTick;
             int daysSinceDeath = ticksSinceDeath / GenDate.TicksPerDay;
 
@@ -340,6 +630,25 @@ namespace ClaudeStoryteller
             if (adaptation > 80) return "snowballing";
             if (adaptation > 60) return "thriving";
             return "stable";
+        }
+
+        private static RecentHistory CollectRecentHistory(StorytellerGameComponent comp)
+        {
+            int lastThreatTick = comp?.LastThreatTick ?? -999999;
+            int lastDeathTick = comp?.LastDeathTick ?? -999999;
+            int lastDownedTick = comp?.LastDownedTick ?? -999999;
+
+            int daysSinceThreat = (Find.TickManager.TicksGame - lastThreatTick) / GenDate.TicksPerDay;
+            int daysSinceDeath = (Find.TickManager.TicksGame - lastDeathTick) / GenDate.TicksPerDay;
+            int daysSinceDowned = (Find.TickManager.TicksGame - lastDownedTick) / GenDate.TicksPerDay;
+
+            return new RecentHistory
+            {
+                DaysSinceThreat = Math.Max(0, daysSinceThreat),
+                DaysSinceColonistDeath = Math.Max(0, daysSinceDeath),
+                DaysSinceColonistDowned = Math.Max(0, daysSinceDowned),
+                LastEvents = comp?.GetRecentEvents(5) ?? new List<PastEvent>()
+            };
         }
 
         private static CombatReadiness CollectCombatReadiness(Map map, List<Pawn> colonists)
@@ -420,21 +729,6 @@ namespace ClaudeStoryteller
             };
         }
 
-        private static RecentHistory CollectRecentHistory(int currentDay)
-        {
-            int daysSinceThreat = (Find.TickManager.TicksGame - lastThreatTick) / GenDate.TicksPerDay;
-            int daysSinceDeath = (Find.TickManager.TicksGame - lastDeathTick) / GenDate.TicksPerDay;
-            int daysSinceDowned = (Find.TickManager.TicksGame - lastDownedTick) / GenDate.TicksPerDay;
-
-            return new RecentHistory
-            {
-                DaysSinceThreat = Math.Max(0, daysSinceThreat),
-                DaysSinceColonistDeath = Math.Max(0, daysSinceDeath),
-                DaysSinceColonistDowned = Math.Max(0, daysSinceDowned),
-                LastEvents = eventHistory.Take(5).ToList()
-            };
-        }
-
         private static Dictionary<string, int> CollectCooldowns()
         {
             var cooldowns = new Dictionary<string, int>();
@@ -468,11 +762,6 @@ namespace ClaudeStoryteller
             }
 
             return factions.Distinct().ToList();
-        }
-
-        private static List<string> GetRecentEventTypes()
-        {
-            return eventHistory.Take(3).Select(e => e.Type).ToList();
         }
     }
 }

@@ -1,15 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="**/*.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>../../../../RimWorldLinux_Data/Managed/Assembly-CSharp.dll</HintPath>
@@ -20,5 +13,4 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
-
 </Project>
